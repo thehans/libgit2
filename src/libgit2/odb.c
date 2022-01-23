@@ -134,6 +134,7 @@ int git_odb__hashobj(git_oid *id, git_rawobj *obj)
 	vec[1].data = obj->data;
 	vec[1].len = obj->len;
 
+	id->type = GIT_OID_SHA1;
 	return git_hash_vec(id->id, vec, 2, GIT_HASH_ALGORITHM_SHA1);
 }
 
@@ -236,6 +237,7 @@ int git_odb__hashfd(git_oid *out, git_file fd, size_t size, git_object_t type)
 	}
 
 	error = git_hash_final(out->id, &ctx);
+	out->type = GIT_OID_SHA1;
 
 done:
 	git_hash_ctx_cleanup(&ctx);
@@ -1049,7 +1051,7 @@ int git_odb_expand_ids(
 		/* the object is missing or ambiguous */
 		case GIT_ENOTFOUND:
 		case GIT_EAMBIGUOUS:
-			memset(&query->id, 0, sizeof(git_oid));
+			git_oid_clear(&query->id, GIT_OID_SHA1);
 			query->length = 0;
 			query->type = 0;
 			break;
@@ -1611,6 +1613,7 @@ int git_odb_stream_finalize_write(git_oid *out, git_odb_stream *stream)
 			"stream_finalize_write()");
 
 	git_hash_final(out->id, stream->hash_ctx);
+	out->type = GIT_OID_SHA1;
 
 	if (git_odb__freshen(stream->backend->odb, out))
 		return 0;
